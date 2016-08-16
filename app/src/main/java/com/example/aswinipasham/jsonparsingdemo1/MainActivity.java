@@ -1,8 +1,10 @@
 package com.example.aswinipasham.jsonparsingdemo1;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.support.annotation.FloatRange;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.aswinipasham.jsonparsingdemo1.models.UsersModel;
+import com.google.gson.Gson;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
@@ -41,14 +44,18 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-
-    ListView userList;
+    private ProgressDialog dialog;
+    private ListView userList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        dialog = new ProgressDialog(this);
+        dialog.setIndeterminate(true);
+        dialog.setCancelable(false);
+        dialog.setMessage("Loading, Please wait...");
 
         // Create default options which will be used for every
         //  displayImage(...) call if no options will be passed to this method
@@ -69,6 +76,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     public class JSONTask extends AsyncTask<String, String, List<UsersModel>> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog.show();
+
+        }
 
         @Override
         protected List<UsersModel> doInBackground(String... params) {
@@ -94,23 +108,29 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 String finalJson = buffer.toString();
-
                 JSONArray parentArray = new JSONArray(finalJson);
 
 
                 List<UsersModel> usersModelList = new ArrayList<>();
 
+                RatingBar rate;
+                Gson gson = new Gson();
                 for (int i = 0; i < parentArray.length(); i++) {
                     JSONObject parentObject = parentArray.getJSONObject(i);
-                    UsersModel usersModel = new UsersModel();
+
+                    UsersModel usersModel = gson.fromJson(parentObject.toString(), UsersModel.class);
+
+
+                    /*UsersModel usersModel = new UsersModel();
 
                     usersModel.setName(parentObject.getString("login"));
                     usersModel.setUrl(parentObject.getString("url"));
                     usersModel.setImage(parentObject.getString("avatar_url"));
                     usersModel.setLink(parentObject.getString("html_url"));
                     //usersModel.setEmail(parentObject.getString("email"));
-                    usersModel.setFollowers(parentObject.getString("followers_url"));
+                    usersModel.setFollowers(parentObject.getString("followers_url"));*/
 
+                    //usersModel.setRating(Float.parseFloat("2.0"));
                     usersModelList.add(usersModel);
                 }
 
@@ -140,8 +160,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<UsersModel> result) {
             super.onPostExecute(result);
+            dialog.dismiss();
             UserAdapter adapter = new UserAdapter(getApplicationContext(), R.layout.row, result);
             userList.setAdapter(adapter);
+
 
         }
 
